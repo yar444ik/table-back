@@ -2,11 +2,8 @@ package dev.vorstu.controllers;
 
 import dev.vorstu.dto.Student;
 import dev.vorstu.repositories.StudentRepository;
-import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.*;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,38 +11,56 @@ import java.util.ArrayList;
 import java.util.List;
 
 @RestController
-@RequestMapping("api/base")
+@RequestMapping("/api/base")
 public class BaseController {
     @Autowired
     private final StudentRepository studentRepository;
-    private Long counter = 0L;
 
     public BaseController(StudentRepository studentRepository) {
         this.studentRepository = studentRepository;
     }
 
-    private Long generateId() { return counter++; }
-    private final List<Student> students = new ArrayList<>();
+    //private final List<Student> students = new ArrayList<>();
 
-    @PostConstruct
-    public void init() {}
+//    @GetMapping("/students/filter")
+//    public Student getStudentById(@RequestParam(value = "group") String group) {
+//        return students.stream()
+//                .filter(student -> student.getGroup().equals(group))
+//                .findFirst()
+//                .orElse(null);
+//    }
 
-    @PostMapping(value = "students")
-    public Student createStudent(@RequestBody Student newStudent) { return addStudent(newStudent); }
+    @PostMapping(value = "/students", produces = MediaType.APPLICATION_JSON_VALUE)
+    public Student createStudent(@RequestBody Student newStudent) {
+        return addStudent(newStudent);
+    }
 
     private Student addStudent(Student student) {
-        student.setId(generateId());
-        students.add(student);
-        return student;
+        return studentRepository.save(student);
     }
 
-    @GetMapping("students")
+//    @GetMapping(value ="/students")
+//    public Page<Student> getAllStudents(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "5") int size) {
+//        try {
+//            return studentRepository.findAll(PageRequest.of(page, size));
+//        } catch (IllegalArgumentException e) {
+//            System.out.println("Error creating pageable: " + e.getMessage());
+//            return Page.empty();
+//        }
+//    }
+    @GetMapping(value = "/students", produces = MediaType.APPLICATION_JSON_VALUE)
     public List<Student> getAllStudents() {
-        return students;
+        return studentRepository.findAll();
     }
 
-    @PutMapping(value = "students")
+//    public Page<Student> findAll(int page, int size) {
+//        Pageable pageable = PageRequest.of(page, size);
+//        return studentRepository.findAll(pageable);
+//    }
+
+    @PutMapping(value = "/students/", produces = MediaType.APPLICATION_JSON_VALUE)
     public Student changeStudent(@RequestBody Student changingStudent) {
+
         return updateStudent(changingStudent);
     }
 
@@ -54,47 +69,29 @@ public class BaseController {
             throw new RuntimeException("Student id is null");
         }
 
-        Student changingStudent = students.stream().filter(x -> x.getId().equals(student.getId()))
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("Student with id: " + student.getId() + " not found"));
-
-        changingStudent.setId(student.getId());
+        Student changingStudent = studentRepository.findById(student.getId())
+                .orElseThrow(() -> new RuntimeException("student with id: " + student.getId() + "was not found" ));
         changingStudent.setName(student.getName());
         changingStudent.setSurname(student.getSurname());
         changingStudent.setGroup(student.getGroup());
-        return changingStudent;
+        return studentRepository.save(changingStudent);
     }
 
-    @DeleteMapping(value = "students/{id}")
+    @DeleteMapping(value = "/students/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public Long deleteStudent(@PathVariable("id") Long id) {
         return removeStudent(id);
     }
 
     private Long removeStudent(Long id) {
-        students.removeIf(x -> x.getId().equals(id));
+        studentRepository.deleteById(id);
         return id;
     }
 
-    @GetMapping(value = "students/{id}")
-    public Student getStudent(@PathVariable("id") Long id) {
-        return students.stream()
-                .filter(x -> x.getId().equals(id))
-                .findFirst()
-                .orElseThrow(()-> new RuntimeException("Student with id: " + id + " not found"));
-    }
-
-    @GetMapping(value = "students/filter")
-    public Student getStudentById(@RequestParam(value = "group") String group) {
-        return students.stream()
-                .filter(student -> student.getGroup().equals(group))
-                .findFirst()
-                .orElse(null);
-    }
-
-    public Page<Student> findAll(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        return studentRepository.findAll(pageable);
-    }
-
-
+//    @GetMapping(value = "/students/{id}")
+//    public Student getStudent(@PathVariable("id") Long id) {
+//        return students.stream()
+//                .filter(x -> x.getId().equals(id))
+//                .findFirst()
+//                .orElseThrow(()-> new RuntimeException("Student with id: " + id + " not found"));
+//    }
 }

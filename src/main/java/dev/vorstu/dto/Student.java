@@ -10,6 +10,13 @@ import lombok.*;
 @Entity
 @Table(name = "students")
 public class Student {
+
+    public Student(String name, String surname, String group) {
+        this.name = name;
+        this.surname = surname;
+        this.group = group;
+    }
+
     @Id
     @GeneratedValue(strategy=GenerationType.AUTO)
     private Long id;
