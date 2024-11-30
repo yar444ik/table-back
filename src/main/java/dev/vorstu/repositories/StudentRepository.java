@@ -1,11 +1,9 @@
 package dev.vorstu.repositories;
 
-import dev.vorstu.dto.Student;
-import org.springframework.data.domain.*;
+import dev.vorstu.entities.StudentEntity;
 import org.springframework.data.jpa.repository.*;
-import org.springframework.data.repository.query.Param;
 
-public interface StudentRepository extends JpaRepository<Student, Long> {
+public interface StudentRepository extends JpaRepository<StudentEntity, Long> {
 //    @Query("from Student")
 //    Page<Student> findAllByPageRequest(Pageable pageable);
 //
