@@ -10,6 +10,7 @@ public class StudentDTO {
 
     private Long id;
 
+    @JsonProperty("name")
     private String name;
 
     @JsonProperty("surname")
@@ -17,4 +18,5 @@ public class StudentDTO {
 
     @JsonProperty("group")
     private String group;
+
 }
