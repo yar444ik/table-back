@@ -11,10 +11,11 @@ import lombok.*;
 @Table(name = "students")
 public class StudentEntity {
 
-    public StudentEntity(String name, String surname, String group) {
+    public StudentEntity(String name, String surname, String group, UserEntity user) {
         this.name = name;
         this.surname = surname;
         this.group = group;
+        this.user = user;
     }
 
     @Id
@@ -24,4 +25,7 @@ public class StudentEntity {
     private String surname;
     @Column(name = "group_of_students")
     private String group;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "user_id")
+    private UserEntity user;
 }

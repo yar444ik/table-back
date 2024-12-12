@@ -2,35 +2,60 @@ package dev.vorstu.services;
 
 import dev.vorstu.dto.StudentDTO;
 import dev.vorstu.entities.StudentEntity;
+import dev.vorstu.entities.UserEntity;
+import dev.vorstu.mappers.StudentMapper;
 import dev.vorstu.repositories.StudentRepository;
+import dev.vorstu.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 @Service
 public class StudentService {
+
     @Autowired
     StudentRepository studentRepository;
+
+    @Autowired
+    UserRepository userRepository;
+
+    @Autowired
+    StudentMapper studentMapper;
 
     public StudentDTO updateStudent(StudentDTO studentData, Long id) {
         StudentEntity student = studentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Not Found"));
-        toStudentEntity(studentData, student);
-        studentRepository.save(student);
-        StudentDTO studentDTO = toStudentDTO(student);
-        return studentDTO;
+        studentRepository.save(studentMapper.toStudentEntityExceptId(student, studentData));
+        StudentDTO StudentDTO = studentMapper.toStudentDTO(student);
+        return StudentDTO;
     }
 
-    public Page<StudentDTO> findAll(int page, int size, String sortField, String sortDirection) {
-        Sort sort = Sort.by(Sort.Direction.fromString(sortDirection), sortField);
-        Pageable pageable = PageRequest.of(page, size, sort);
-        Page<StudentEntity> studentEntities = studentRepository.findAll(pageable);
-        Page<StudentDTO> studentDtos = studentEntities.map(this::toStudentDTO);
-        return  studentDtos;
+    public Page<StudentDTO> findAll(Pageable pageable ) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ADMIN"))) {
+            Page<StudentEntity> studentEntities = studentRepository.findAll(pageable);
+            Page<StudentDTO> studentDtos = studentEntities.map(this::toStudentDto);
+            return studentDtos;
+        }
+        else {
+            Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            String username;
+            if (principal instanceof org.springframework.security.core.userdetails.User) {
+                org.springframework.security.core.userdetails.User userDetails = (org.springframework.security.core.userdetails.User) principal;
+                username = userDetails.getUsername();
+            } else {
+                username = principal.toString();
+            }
+            UserEntity currentUser = userRepository.findByUsername(username);
+            Long userId = currentUser.getId();
+            Page<StudentEntity> studentEntities = studentRepository.findAllToUser(pageable, userId);
+            Page<StudentDTO> studentDtos = studentEntities.map(this::toStudentDto);
+            return studentDtos;
+        }
     }
 
     public Long deleteStudentById(Long id) {
@@ -39,40 +64,36 @@ public class StudentService {
     }
 
     public StudentDTO saveStudent(StudentDTO newStudent) {
-        StudentEntity student = toStudentEntity(newStudent);
+        StudentEntity student = studentMapper.toStudentEntity(newStudent);
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String username;
+        if (principal instanceof org.springframework.security.core.userdetails.User) {
+            org.springframework.security.core.userdetails.User userDetails = (org.springframework.security.core.userdetails.User) principal;
+            username = userDetails.getUsername();
+        } else {
+            username = principal.toString();
+        }
+        UserEntity currentUser = userRepository.findByUsername(username);
+        student.setUser(currentUser);
         studentRepository.save(student);
-        StudentDTO StudentDTO = toStudentDTO(student);
+        StudentDTO StudentDTO = studentMapper.toStudentDTO(student);
         return StudentDTO;
     }
 
-    public  Page<StudentDTO> findByFilter(String filter, int page, int size, String sortField, String sortDirection) {
-        Sort sort = Sort.by(Sort.Direction.fromString(sortDirection), sortField);
-        Pageable pageable = PageRequest.of(page, size, sort);
+    public  Page<StudentDTO> findByFilter(String filter, Pageable pageable) {
         Page<StudentEntity> studentEntities = studentRepository.findByFilter(filter, pageable);
-        Page<StudentDTO> studentDTOs = studentEntities.map(this::toStudentDTO);
-        return studentDTOs;
+        Page<StudentDTO> studentDtos = studentEntities.map(this::toStudentDto);
+        return studentDtos;
     }
 
-    private StudentEntity toStudentEntity(StudentDTO studentCreateDto) {
-        var studentEntity  = new StudentEntity();
-        studentEntity.setSurname(studentCreateDto.getSurname());
-        studentEntity.setName(studentCreateDto.getName());
-        studentEntity.setGroup(studentCreateDto.getGroup());
-        return studentEntity;
+    private StudentDTO toStudentDto(StudentEntity studentEntity) {
+        StudentDTO studentDto = new StudentDTO();
+        studentDto.setId(studentEntity.getId());
+        studentDto.setName(studentEntity.getName());
+        studentDto.setSurname(studentEntity.getSurname());
+        studentDto.setGroup(studentEntity.getGroup());
+        return  studentDto;
     }
 
-    private void toStudentEntity(StudentDTO studentUpdateDto, StudentEntity studentEntity) {
-        studentEntity.setSurname(studentUpdateDto.getSurname());
-        studentEntity.setName(studentUpdateDto.getName());
-        studentEntity.setGroup(studentUpdateDto.getGroup());
-    }
 
-    private StudentDTO toStudentDTO(StudentEntity studentEntity) {
-        var studentDTO = new StudentDTO();
-        studentDTO.setId(studentEntity.getId());
-        studentDTO.setName(studentEntity.getName());
-        studentDTO.setSurname(studentEntity.getSurname());
-        studentDTO.setGroup(studentEntity.getGroup());
-        return  studentDTO;
-    }
 }
