@@ -2,14 +2,18 @@ package com.vorstu.table.controllers;
 
 import com.vorstu.table.dto.Student;
 import com.vorstu.table.service.StudentService;
-import lombok.RequiredArgsConstructor;
+import com.vorstu.table.service.auth.JwtUserDetailsService;
+import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
+//import org.springframework.data.domain.PageRequest;
+//import org.springframework.data.domain.Pageable;
+//import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("api/base/students")
-@RequiredArgsConstructor
+@AllArgsConstructor
 public class BaseController {
 
     private final StudentService service;
@@ -29,7 +33,7 @@ public class BaseController {
         return service.delete(id);
     }
 
-    @GetMapping
+    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public Page<Student> getAllStudents(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size,
@@ -39,4 +43,16 @@ public class BaseController {
         return service.findAll(page, size, sortField, sortDirection);
     }
 
+//    @GetMapping(value = "search", produces = MediaType.APPLICATION_JSON_VALUE)
+//    public Page<Student> searchStudents(
+//            @RequestParam("filter") String filter,
+//            @RequestParam(value = "page", defaultValue = "0") int page,
+//            @RequestParam(value = "size", defaultValue = "5") int size,
+//            @RequestParam(value = "sortField", defaultValue = "id") String sortField,
+//            @RequestParam(value = "sortDirection", defaultValue = "asc") String sortDirection)
+//    {
+//        Sort sort = Sort.by(Sort.Direction.fromString(sortDirection), sortField);
+//        Pageable pageable = PageRequest.of(page, size, sort);
+//        return service.findByFilter(filter, pageable);
+//    }
 }

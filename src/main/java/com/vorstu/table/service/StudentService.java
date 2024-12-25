@@ -56,4 +56,20 @@ public class StudentService {
         entity.setGroup(dto.getGroup());
         return entity;
     }
+
+//    public String register(RegistrationRequest request) {
+//        AppUser appUser = new AppUser(
+//                request.getFirstname(),request.getLastname(),request.getEmail(),request.getPassword(),AppUserRole.USER
+//        );
+//        String token = appUserService.signUpUser(appUser);
+//        String confirmationLink = "http://localhost:9090/registration/confirmation?token=" + token;
+//        // todo: send the email.
+//
+//        return token;
+//    }
+
+//    public  Page<Student> findByFilter(String filter, Pageable pageable) {
+//        Page<StudentEntity> studentEntities = studentRepository.findByFilter(filter, pageable);
+//        return studentEntities.map(mapper::entityToDto);
+//    }
 }

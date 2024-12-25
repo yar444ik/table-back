@@ -36,15 +36,17 @@ public class JwtUserDetailsService implements UserDetailsService {
     }
 
     public void createUser(SignInRequest request) {
+        if (!userRepository.findByUsername(request.getUsername()).isPresent()) {
+            UserEntity entity = UserEntity.builder()
+                    .username(request.getUsername())
+                    .passwordEntity(new PasswordEntity(request.getPwd()))
+                    .enabled(true)
+                    .role(Role.STUDENT)
+                    .build();
 
-        UserEntity entity = UserEntity.builder()
-                .username(request.getUsername())
-                .passwordEntity(new PasswordEntity(request.getPwd()))
-                .enabled(true)
-                .role(Role.STUDENT)
-                .build();
-
-        userRepository.save(entity);
+            userRepository.save(entity);
+        } else {
+            throw new UsernameNotFoundException(String.format("User %s not found", request.getUsername()));
+        }
     }
-
 }
